@@ -27,8 +27,6 @@
 static struct dma_buf_s6sy761 *dma_buffer;
 extern int tp_register_times;
 extern struct touchpanel_data *g_tp;
-#define PM_QOS_VALUE_TP 200
-struct pm_qos_request pm_qos_req_stp;
 
 /****************** Start of Log Tag Declear and level define*******************************/
 #define TPD_DEVICE "sec-s6sy761"
@@ -1099,7 +1097,7 @@ static fw_update_state sec_fw_update(void *chip_data, const struct firmware *fw,
 	return FW_UPDATE_SUCCESS;
 }
 
-static u8 sec_trigger_reason(void *chip_data, int gesture_enable, int is_suspended)
+static u8 sec_trigger_reason(void *chip_data, int gesture_enable, int is_suspended, int irq)
 {
 	int ret = 0;
 	int event_id = 0;
@@ -1109,7 +1107,8 @@ static u8 sec_trigger_reason(void *chip_data, int gesture_enable, int is_suspend
 	struct chip_data_s6sy761 *chip_info = (struct chip_data_s6sy761 *)chip_data;
 	struct fp_underscreen_info tp_info;
 
-	pm_qos_add_request(&pm_qos_req_stp, PM_QOS_CPU_DMA_LATENCY, PM_QOS_VALUE_TP);
+	BUG_ON(!irq);
+
 	ret = touch_i2c_read_block(chip_info->client, SEC_READ_ONE_EVENT, SEC_EVENT_BUFF_SIZE, chip_info->first_event);
 	if (ret < 0) {
 		while(ret < 0 && i2c_error_num < 4) {
@@ -1124,7 +1123,6 @@ static u8 sec_trigger_reason(void *chip_data, int gesture_enable, int is_suspend
 				sec_reset(chip_info);
 				operate_mode_switch(g_tp);
 			}
-			pm_qos_remove_request(&pm_qos_req_stp);
 			return IRQ_IGNORE;
 		}
 	}
@@ -1135,7 +1133,6 @@ static u8 sec_trigger_reason(void *chip_data, int gesture_enable, int is_suspend
 
 	if (chip_info->first_event[0] == 0) {
 		TPD_DETAIL("%s: event buffer is empty\n", __func__);
-		pm_qos_remove_request(&pm_qos_req_stp);
 		return IRQ_IGNORE;
 	}
 	p_event_status = (struct sec_event_status *)chip_info->first_event;
@@ -1153,7 +1150,6 @@ static u8 sec_trigger_reason(void *chip_data, int gesture_enable, int is_suspend
 		if (ret < 0) {
 			TPD_INFO("%s: clear event buffer failed\n", __func__);
 		}
-		pm_qos_remove_request(&pm_qos_req_stp);
 		return IRQ_IGNORE;
 	}
 
@@ -1168,7 +1164,6 @@ static u8 sec_trigger_reason(void *chip_data, int gesture_enable, int is_suspend
 			if (ret < 0) {
 				TPD_INFO("%s: write sense on failed\n", __func__);
 			}
-			pm_qos_remove_request(&pm_qos_req_stp);
 			return IRQ_FW_AUTO_RESET;
 		}
 
@@ -1180,14 +1175,12 @@ static u8 sec_trigger_reason(void *chip_data, int gesture_enable, int is_suspend
 
 		if ((p_event_status->stype == TYPE_STATUS_EVENT_ERR) && (p_event_status->status_id == SEC_ERR_EVENT_ESD)) {
 			TPD_INFO("%s: ESD detected. run reset\n", __func__);
-			pm_qos_remove_request(&pm_qos_req_stp);
 			return IRQ_EXCEPTION;
 		}
 
 		if ((p_event_status->stype == TYPE_STATUS_EVENT_VENDOR_INFO) && (p_event_status->status_id == SEC_STATUS_EARDETECTED)) {
 			chip_info->proximity_status = p_event_status->status_data_1;
 			TPD_INFO("%s: face detect status %d\n",__func__, chip_info->proximity_status);
-			pm_qos_remove_request(&pm_qos_req_stp);
 			return IRQ_FACE_STATE;
 		}
 
@@ -1208,14 +1201,12 @@ static u8 sec_trigger_reason(void *chip_data, int gesture_enable, int is_suspend
 				opticalfp_irq_handler(&tp_info);
 			}
 			TPD_INFO("%s: touch_hold status %d\n",__func__, p_event_status->status_data_1);
-			pm_qos_remove_request(&pm_qos_req_stp);
 			return IRQ_IGNORE;
 		}
 
 		if ((p_event_status->stype == TYPE_STATUS_EVENT_INFO) && (p_event_status->status_id == SEC_TS_ACK_WET_MODE)) {
 			chip_info->wet_mode = p_event_status->status_data_1;
 			TPD_INFO("%s: water wet mode %d\n",__func__, chip_info->wet_mode);
-			pm_qos_remove_request(&pm_qos_req_stp);
 			return IRQ_IGNORE;
 		}
 		if ((p_event_status->stype == TYPE_STATUS_EVENT_VENDOR_INFO) && (p_event_status->status_id == SEC_TS_VENDOR_ACK_NOISE_STATUS_NOTI)) {
@@ -1226,7 +1217,6 @@ static u8 sec_trigger_reason(void *chip_data, int gesture_enable, int is_suspend
 			TPD_INFO("%s: TSP NOISE MODE %s[%d]\n",
 					__func__,chip_info->touch_noise_status == 0 ? "OFF" : "ON",
 					p_event_status->status_data_1);
-			pm_qos_remove_request(&pm_qos_req_stp);
 			return IRQ_IGNORE;
 		}
 	} else if (event_id == SEC_COORDINATE_EVENT) {
@@ -1234,7 +1224,6 @@ static u8 sec_trigger_reason(void *chip_data, int gesture_enable, int is_suspend
 	} else if (event_id == SEC_GESTURE_EVENT) {
 		return IRQ_GESTURE;
 	}
-	pm_qos_remove_request(&pm_qos_req_stp);
 	return IRQ_IGNORE;
 }
 
@@ -1267,7 +1256,6 @@ static int sec_get_touch_points(void *chip_data, struct point_info *points, int 
 
 	left_event = chip_info->first_event[7] & 0x3F;
 	if (left_event == 0) {
-		pm_qos_remove_request(&pm_qos_req_stp);
 		return obj_attention;
 	} else if (left_event > max_num - 1) {
 		TPD_INFO("%s: read left event beyond max touch points\n", __func__);
@@ -1276,7 +1264,6 @@ static int sec_get_touch_points(void *chip_data, struct point_info *points, int 
 	ret = touch_i2c_read_block(chip_info->client, SEC_READ_ALL_EVENT, SEC_EVENT_BUFF_SIZE * left_event, &event_buff[0]);
 	if (ret < 0) {
 		TPD_INFO("%s: i2c read all event failed\n", __func__);
-		pm_qos_remove_request(&pm_qos_req_stp);
 		return obj_attention;
 	}
 
@@ -1297,7 +1284,6 @@ static int sec_get_touch_points(void *chip_data, struct point_info *points, int 
 			obj_attention = obj_attention | (1 << t_id);    //set touch bit
 		}
 	}
-	pm_qos_remove_request(&pm_qos_req_stp);
 	return obj_attention;
 }
 
@@ -1501,7 +1487,6 @@ static int sec_get_gesture_info(void *chip_data, struct gesture_info * gesture)
 			gesture->Point_2nd.x, gesture->Point_2nd.y, \
 			gesture->Point_3rd.x, gesture->Point_3rd.y, \
 			gesture->Point_4th.x, gesture->Point_4th.y);
-	pm_qos_remove_request(&pm_qos_req_stp);
 
 	return 0;
 }
@@ -3420,6 +3405,19 @@ static int sec_tp_probe(struct i2c_client *client, const struct i2c_device_id *i
 	sec_raw_device_init(ts);
 	sec_create_proc(ts, &sec_proc_ops);
 	schedule_delayed_work(&ts->work_read_info, msecs_to_jiffies(50));
+
+	/* 7. setup pm_qos requests*/
+	ts->pm_i2c_req.type = PM_QOS_REQ_AFFINE_IRQ;
+	ts->pm_i2c_req.irq = geni_i2c_get_adap_irq(client);
+	irq_set_perf_affinity(ts->pm_i2c_req.irq, IRQF_PERF_AFFINE);
+	pm_qos_add_request(&ts->pm_i2c_req, PM_QOS_CPU_DMA_LATENCY,
+		PM_QOS_DEFAULT_VALUE);
+
+	ts->pm_touch_req.type = PM_QOS_REQ_AFFINE_IRQ;
+	ts->pm_touch_req.irq = client->irq;
+	pm_qos_add_request(&ts->pm_touch_req, PM_QOS_CPU_DMA_LATENCY,
+		PM_QOS_DEFAULT_VALUE);
+
 	TPD_INFO("%s, probe normal end\n", __func__);
 	return 0;
 
@@ -3441,6 +3439,9 @@ static int sec_tp_remove(struct i2c_client *client)
 	struct touchpanel_data *ts = i2c_get_clientdata(client);
 
 	TPD_INFO("%s is called\n", __func__);
+
+	pm_qos_remove_request(&ts->pm_touch_req);
+	pm_qos_remove_request(&ts->pm_i2c_req);
 
 	cancel_delayed_work_sync(&ts->work_read_info);
 	flush_delayed_work(&ts->work_read_info);
