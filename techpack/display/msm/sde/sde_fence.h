@@ -14,8 +14,6 @@
 #define CHAR_BIT 8 /* define this if limits.h not available */
 #endif
 
-#define SDE_FENCE_NAME_SIZE	24
-
 /**
  * struct sde_fence_context - release/retire fence context/timeline structure
  * @commit_count: Number of detected commits since bootup
@@ -37,7 +35,6 @@ struct sde_fence_context {
 	spinlock_t list_lock;
 	u64 context;
 	struct list_head fence_list_head;
-	char name[SDE_FENCE_NAME_SIZE];
 };
 
 /**
