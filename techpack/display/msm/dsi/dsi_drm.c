@@ -11,6 +11,7 @@
 #include "sde_connector.h"
 #include "dsi_drm.h"
 #include "sde_trace.h"
+#include "sde_encoder.h"
 #include "sde_dbg.h"
 #include "sde_encoder.h"
 #include "sde_dbg.h"
