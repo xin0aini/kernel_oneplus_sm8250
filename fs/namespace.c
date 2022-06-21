@@ -2762,14 +2762,6 @@ long do_mount(const char *dev_name, const char __user *dir_name,
 	unsigned int mnt_flags = 0, sb_flags;
 	int retval = 0;
 
-#ifdef CONFIG_OPLUS_SECURE_GUARD
-#ifdef CONFIG_OPLUS_MOUNT_BLOCK
-	retval = oplus_mount_block(dir_name, flags);
-	if (retval < 0){
-		return -EPERM;
-	}
-#endif /* CONFIG_OPLUS_MOUNT_BLOCK */
-#endif /* CONFIG_OPLUS_SECURE_GUARD */
 	/* Discard magic */
 	if ((flags & MS_MGC_MSK) == MS_MGC_VAL)
 		flags &= ~MS_MGC_MSK;
