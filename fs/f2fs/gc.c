@@ -1146,7 +1146,7 @@ next_step:
 			continue;
 		}
 
-		if (f2fs_get_node_info(sbi, nid, &ni)) {
+		if (f2fs_get_node_info(sbi, nid, &ni, false)) {
 			f2fs_put_page(node_page, 1);
 			continue;
 		}
@@ -1214,7 +1214,7 @@ static bool is_alive(struct f2fs_sb_info *sbi, struct f2fs_summary *sum,
 	if (IS_ERR(node_page))
 		return false;
 
-	if (f2fs_get_node_info(sbi, nid, dni)) {
+	if (f2fs_get_node_info(sbi, nid, dni, false)) {
 		f2fs_put_page(node_page, 1);
 		return false;
 	}
@@ -1243,7 +1243,7 @@ static bool is_alive(struct f2fs_sb_info *sbi, struct f2fs_summary *sum,
 			if (!test_and_set_bit(segno, SIT_I(sbi)->invalid_segmap)) {
 				f2fs_err(sbi, "mismatched blkaddr %u (source_blkaddr %u) in seg %u",
 					 blkaddr, source_blkaddr, segno);
-				f2fs_bug_on(sbi, 1);
+				set_sbi_flag(sbi, SBI_NEED_FSCK);
 			}
 		}
 #endif
@@ -1410,7 +1410,7 @@ static int move_data_block(struct inode *inode, block_t bidx,
 
 	f2fs_wait_on_block_writeback(inode, dn.data_blkaddr);
 
-	err = f2fs_get_node_info(fio.sbi, dn.nid, &ni);
+	err = f2fs_get_node_info(fio.sbi, dn.nid, &ni, false);
 	if (err)
 		goto put_out;
 
@@ -1661,7 +1661,8 @@ next_step:
 
 		if (phase == 3) {
 			inode = f2fs_iget(sb, dni.ino);
-			if (IS_ERR(inode) || is_bad_inode(inode))
+			if (IS_ERR(inode) || is_bad_inode(inode) ||
+					special_file(inode->i_mode))
 				continue;
 
 			if (!down_write_trylock(
