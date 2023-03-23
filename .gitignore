@@ -135,3 +135,9 @@ all.config
 
 # fetched Android config fragments
 kernel/configs/android-*.cfg
+
+# build
+anykernel/Image.gz
+anykernel/dtbo.img
+out
+kernel.zip
