@@ -4698,6 +4698,7 @@ static int init_touchpanel_proc(struct touchpanel_data *ts)
 	int ret = 0;
 	struct proc_dir_entry *prEntry_tp = NULL;
 	struct proc_dir_entry *prEntry_tmp = NULL;
+	char sysfs_path[128], *__sysfs_path;
 
 	TPD_INFO("%s entry\n", __func__);
 
@@ -4972,6 +4973,18 @@ static int init_touchpanel_proc(struct touchpanel_data *ts)
 		TPD_INFO("%s: Couldn't create dev_attr_single_tap_pressed, %d\n", __func__, __LINE__);
 	if (device_create_file(&ts->client->dev, &dev_attr_double_tap_pressed))
 		TPD_INFO("%s: Couldn't create dev_attr_double_tap_pressed, %d\n", __func__, __LINE__);
+
+	// Create a symlink of /sys i2c path to procfs for easy lookup
+	__sysfs_path = kobject_get_path(&ts->client->dev.kobj, GFP_KERNEL);
+	if (__sysfs_path == NULL) {
+		TPD_INFO("%s: Couldn't resolve sysfs path, %d\n", __func__, __LINE__);
+	} else {
+		sprintf(sysfs_path, "/sys%s", __sysfs_path);
+		kfree(__sysfs_path);
+		prEntry_tmp = proc_symlink("i2c", prEntry_tp, sysfs_path);
+		if (prEntry_tmp == NULL)
+			TPD_INFO("%s: Couldn't create proc symlink, %d\n", __func__, __LINE__);
+	}
 
 	return ret;
 }
