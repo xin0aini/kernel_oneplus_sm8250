@@ -959,6 +959,9 @@ struct touchpanel_data {
 	struct workqueue_struct *async_workqueue;
 	struct work_struct     fw_update_work;             /*using for fw update*/
 
+	struct delayed_work report_single_tap_work;
+	struct wakeup_source single_tap_pm;
+
 	struct work_struct     tp_refresh_work;            /*using for tp_refresh resume*/
 	struct workqueue_struct *tp_refresh_wq;            /*using for tp_refresh wq*/
 
