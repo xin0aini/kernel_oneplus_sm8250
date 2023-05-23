@@ -82,21 +82,21 @@
 #define FINGERPRINT_DOWN_DETECT 0X0f
 #define FINGERPRINT_UP_DETECT 0X1f
 
-#define KEY_GESTURE_W               246
-#define KEY_GESTURE_M               247
-#define KEY_GESTURE_S               248
 #define KEY_DOUBLE_TAP              KEY_WAKEUP
-#define KEY_GESTURE_CIRCLE          250
-#define KEY_GESTURE_TWO_SWIPE       251
-#define KEY_GESTURE_UP_ARROW        252
-#define KEY_GESTURE_LEFT_ARROW      253
-#define KEY_GESTURE_RIGHT_ARROW     254
-#define KEY_GESTURE_DOWN_ARROW      255
-#define KEY_GESTURE_SWIPE_LEFT      KEY_F5
-#define KEY_GESTURE_SWIPE_DOWN      KEY_F6
-#define KEY_GESTURE_SWIPE_RIGHT     KEY_F7
-#define KEY_GESTURE_SWIPE_UP        KEY_F8
-#define KEY_GESTURE_SINGLE_TAP      KEY_F9
+#define KEY_GESTURE_UP_ARROW        248
+#define KEY_GESTURE_DOWN_ARROW      249
+#define KEY_GESTURE_LEFT_ARROW      250
+#define KEY_GESTURE_RIGHT_ARROW     251
+#define KEY_GESTURE_CIRCLE          252
+#define KEY_GESTURE_TWO_SWIPE       253
+#define KEY_GESTURE_SWIPE_RIGHT     254
+#define KEY_GESTURE_SWIPE_LEFT      255
+#define KEY_GESTURE_SWIPE_DOWN      256
+#define KEY_GESTURE_SWIPE_UP        257
+#define KEY_GESTURE_M               258
+#define KEY_GESTURE_W               259
+#define KEY_GESTURE_SINGLE_TAP      262
+#define KEY_GESTURE_S               264
 
 /* bit operation */
 #define SET_BIT(data, flag) ((data) |= (flag))
