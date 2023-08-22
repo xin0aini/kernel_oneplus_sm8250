@@ -17,9 +17,6 @@ CLANG_BUILD="r450784d"
 # Path to executables in LLVM toolchain
 CLANG_BIN="/mnt/nvme0/toolchains/clang/clang-$CLANG_BUILD/bin"
 
-# GCC toolchain prefix
-GCC_PREFIX="/mnt/nvme0/toolchains/gcc/aarch64-linux-android-4.9/bin/aarch64-linux-android-"
-
 # Environment
 export PATH="$CLANG_BIN:$PATH"
 
@@ -39,8 +36,6 @@ KMAKE_FLAGS=(
 
     CC="clang"
     CLANG_TRIPLE="aarch64-linux-gnu-"
-
-    CROSS_COMPILE="$GCC_PREFIX"
 )
 
 # Kernel defconfig
